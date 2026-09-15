@@ -9,6 +9,7 @@ import androidx.room.Relation
 import androidx.room.Transaction
 import com.itanes.appturismo.data.local.entity.TouristPoint
 import data.local.entity.Tour
+import data.TourRemote
 
 import kotlinx.coroutines.flow.Flow
 
@@ -26,9 +27,17 @@ interface TourDao {
     @Query("SELECT * FROM tours")
     fun getAll(): Flow<List<Tour>>
 
+    @Query("SELECT COUNT(*) FROM tours")
+    suspend fun count(): Int
+
+    @Query("SELECT * FROM tours WHERE substr(startDate, 1, 7) = :month ORDER BY startDate ASC")
+    fun getToursByMonth(month: String): Flow<List<Tour>>
+
     @Transaction
     @Query("SELECT * FROM tours WHERE tourId = :tourId")
     fun getTourById(tourId: Int): Flow<TourWithPoints>
+
+
 }
 
 data class TourWithPoints(

@@ -12,6 +12,13 @@
     <string name="share_point">Compartir punto turístico</string>
     <string name="share_error">No se puede compartir en este momento</string>
     <string name="action_settings">Ajustes</string>
+    <string name="navigation_drawer_open">Abrir menú</string>
+    <string name="navigation_drawer_close">Cerrar menú</string>
+    <string name="menu_tours">Tours</string>
+    <string name="menu_favorites">Favoritos</string>
+    <string name="menu_settings">Ajustes</string>
+    <string name="menu_notes">Notas</string>
+    <string name="menu_calendar">Calendario de Tours</string>
 
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris

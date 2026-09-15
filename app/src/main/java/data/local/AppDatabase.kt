@@ -19,7 +19,7 @@ import utils.Converters
         TouristPoint::class,
         Favorite::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

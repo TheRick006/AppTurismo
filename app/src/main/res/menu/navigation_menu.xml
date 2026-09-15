@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/menu_tours"
+            android:icon="@drawable/ic_tour"
+            android:title="Tours" />
+        <item
+            android:id="@+id/menu_notes"
+            android:icon="@drawable/ic_notes"
+            android:title="Notas" />
+        <item
+            android:id="@+id/menu_calendar"
+            android:icon="@drawable/ic_calendar"
+            android:title="Calendario de Tours" />
+        <item
+            android:id="@+id/menu_favorites"
+            android:icon="@drawable/ic_favorite_border"
+            android:title="Favoritos" />
+        <item
+            android:id="@+id/menu_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="Ajustes" />
+    </group>
+</menu>

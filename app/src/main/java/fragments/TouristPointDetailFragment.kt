@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.itanes.appturismo.AppTurismoApp
+import com.itanes.appturismo.MainActivity
 import com.itanes.appturismo.R
 import com.itanes.appturismo.Resource
 import com.itanes.appturismo.TouristPointDetailViewModel
@@ -122,6 +123,9 @@ class TouristPointDetailFragment : Fragment() {
     private fun bindPoint(point: TouristPoint) {
         pointName.text = point.name
         pointDescription.text = point.description
+
+        (requireActivity() as MainActivity).supportActionBar?.title = point.name
+
         pointCoordinates.text = "${point.latitude}, ${point.longitude}"
         setupViewPager(point.getImageList())
     }

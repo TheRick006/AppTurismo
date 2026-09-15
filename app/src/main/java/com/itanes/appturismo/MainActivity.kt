@@ -3,156 +3,119 @@ package com.itanes.appturismo
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import data.local.AppDatabase
-import data.local.entity.Tour
-import com.itanes.appturismo.data.local.entity.TouristPoint
-import kotlinx.coroutines.launch
-import androidx.fragment.app.Fragment
+import androidx.appcompat.widget.Toolbar
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.NavigationUI
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.navigation.NavigationView
+import data.local.entity.Tour
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var navController: NavController
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var appBarConfiguration: AppBarConfiguration
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("Log_MainActivity", "MainActivity creada")
+        // Ocultando la barra de notificaciones y navegacion
+        val windowsIntentsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+        windowsIntentsController.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        windowsIntentsController.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
         setContentView(R.layout.activity_main)
-        Log.d("Log_MainActivity", "Layout cargado")
 
-        // Verificar si NavHost existe
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+        Log.d("MainActivity", "MainActivity creada")
 
-        Log.d("Log_MainActivity", "NavHostFragment: $navHostFragment")
-
-        if (navHostFragment == null) {
-            Log.e("Log_MainActivity", "NavHostFragment es NULL")
-        } else {
-            val navController = navHostFragment.navController
-            Log.d("Log_MainActivity", "NavController: $navController")
-            Log.d("Log_MainActivity", "Current destination: ${navController.currentDestination}")
-            Log.d("Log_MainActivity", "Graph: ${navController.graph}")
-        }
-        // Insertar datos de prueba en Room
+        setupToolbar()
+        setupNavigation()
         insertTestData()
     }
 
-    private fun insertTestData() {
-        lifecycleScope.launch {
-            try {
-                val database = AppDatabase.getInstance(this@MainActivity)
-                val tourDao = database.tourDao()
-                val pointDao = database.touristPointDao()
+    private fun setupToolbar() {
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        drawerLayout = findViewById(R.id.drawerLayout)
 
-                // Crear tours de prueba
-                val testTours = listOf(
-                    Tour(
-                        tourId = 1,
-                        name = "Tour Centro Histórico",
-                        description = "Recorre los lugares más emblemáticos del centro de la ciudad",
-                        imageUrl = "https://picsum.photos/400/300",
-                        updatedAt = System.currentTimeMillis()
-                    ),
-                    Tour(
-                        tourId = 2,
-                        name = "Tour Naturaleza",
-                        description = "Descubre los parques y reservas naturales",
-                        imageUrl = "https://picsum.photos/400/300",
-                        updatedAt = System.currentTimeMillis()
-                    ),
-                    Tour(
-                        tourId = 3,
-                        name = "Tour Gastronómico",
-                        description = "Prueba los mejores sabores locales",
-                        imageUrl = "https://picsum.photos/400/300",
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
+    }
 
-                // Crear puntos turísticos de prueba
-                val testPoints = listOf(
-                    TouristPoint(
-                        touristPointId = 101,
-                        tourId = 1,
-                        name = "Plaza Principal",
-                        description = "La plaza más antigua de la ciudad, rodeada de edificios históricos",
-                        latitude = 19.4326,
-                        longitude = -99.1332,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    ),
-                    TouristPoint(
-                        touristPointId = 102,
-                        tourId = 1,
-                        name = "Catedral",
-                        description = "Impresionante catedral del siglo XVI con arquitectura colonial",
-                        latitude = 19.4342,
-                        longitude = -99.1338,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    ),
-                    TouristPoint(
-                        touristPointId = 103,
-                        tourId = 1,
-                        name = "Museo de Arte",
-                        description = "Colección de arte moderno y contemporáneo",
-                        latitude = 19.4352,
-                        longitude = -99.1412,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    ),
-                    TouristPoint(
-                        touristPointId = 201,
-                        tourId = 2,
-                        name = "Parque Nacional",
-                        description = "Reserva natural con senderos y miradores",
-                        latitude = 19.5023,
-                        longitude = -99.2032,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    ),
-                    TouristPoint(
-                        touristPointId = 202,
-                        tourId = 2,
-                        name = "Lago Principal",
-                        description = "Lago artificial con actividades acuáticas",
-                        latitude = 19.4982,
-                        longitude = -99.2012,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    ),
-                    TouristPoint(
-                        touristPointId = 301,
-                        tourId = 3,
-                        name = "Mercado Municipal",
-                        description = "Productos frescos y comida típica local",
-                        latitude = 19.4382,
-                        longitude = -99.1522,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    ),
-                    TouristPoint(
-                        touristPointId = 302,
-                        tourId = 3,
-                        name = "Restaurante Tradicional",
-                        description = "Cocina tradicional con recetas familiares",
-                        latitude = 19.4412,
-                        longitude = -99.1422,
-                        imageUrls = "[\"https://picsum.photos/400/300\",\"https://picsum.photos/400/300\"]"
-                    )
-                )
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
 
-                // Insertar en Room
-                tourDao.insertAll(testTours)
-                pointDao.insertAll(testPoints)
+        // Configurar destinos principales
+        appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.tourListFragment,
+                R.id.favoritesFragment,
+                R.id.calendarFragment,
+            ),
+            drawerLayout
+        )
 
-                Log.d("MainActivity", "Datos de prueba insertados: ${testTours.size} tours, ${testPoints.size} puntos")
+        // Vincular toolbar con NavController
+        // Vincular NavigationView con NavController
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        val navigationView = findViewById<NavigationView>(R.id.navigationView)
 
-                // Verificar que los datos se insertaron
-                val toursCount = tourDao.getAll().let { flow ->
-                    // No podemos usar .first() aquí porque getAll() retorna Flow
-                    // Solo para verificación
-                    null
+        navigationView.setupWithNavController(navController)
+
+
+
+        // Manejar clics en el menú
+        navigationView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.menu_tours -> {
+                    navController.navigate(R.id.tourListFragment)
+                    drawerLayout.closeDrawers()
+                    true
                 }
-
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error insertando datos: ${e.message}")
-                e.printStackTrace()
+                R.id.menu_favorites -> {
+                    navController.navigate(R.id.favoritesFragment)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+                R.id.menu_settings -> {
+                    // Navegar a ajustes (implementar después)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+                R.id.menu_notes -> {
+                    // Navegar a notas (implementar después)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+                R.id.menu_calendar -> {
+                    navController.navigate(R.id.calendarFragment)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+                else -> false
             }
         }
+    }
+
+
+    override fun onSupportNavigateUp(): Boolean {
+        return NavigationUI.navigateUp(navController, appBarConfiguration)
+                || super.onSupportNavigateUp()
+    }
+
+    private fun insertTestData() {
+        Tour(
+            tourId = 1,
+            name = "Tour Centro Histórico",
+            description = "Recorre los lugares más emblemáticos",
+            imageUrl = "https://picsum.photos/400/300?random=1",
+            startDate = "2026-10-15 09:00:00+00",
+            endDate = "2026-10-15 14:00:00+00",
+            schedule = "09:00 - 14:00",
+            updatedAt = System.currentTimeMillis()
+        )
     }
 }

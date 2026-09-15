@@ -61,18 +61,22 @@ class TourListFragment : Fragment() {
         viewModel.tours.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Loading -> {
-                    Log.d("TourListFragment", "Loading...")
+                    //Log.d("TourListFragment", "Loading...")
                     progressBar.isVisible = true
                     recyclerView.isVisible = false
                 }
                 is Resource.Success -> {
-                    Log.d("TourListFragment", "Success: ${resource.data.size} tours")
+                    /*Log.d("TourListFragment_Success", "Success: ${resource.data.size} tours")
+                    Log.d("TourListFragment_Success", "RecyclerView visible: ${recyclerView.visibility}")
+                    Log.d("TourListFragment_Success", "Adapter itemCount: ${adapter.itemCount}")*/
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    adapter.submitList(resource.data)
+                    adapter.submitList(resource.data) /*{
+                        Log.d("TLFragment TourListFragment_SubmList", "submitList completado. itemCount: ${adapter.itemCount}")
+                    }*/
                 }
                 is Resource.Error -> {
-                    Log.e("TourListFragment", "Error: ${resource.message}")
+                    Log.e("TourListFragment_Error", "Error: ${resource.message}")
                     progressBar.isVisible = false
                     errorText.isVisible = true
                     errorText.text = resource.message

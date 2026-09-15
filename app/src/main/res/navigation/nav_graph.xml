@@ -6,7 +6,8 @@
 
     <fragment
         android:id="@+id/splashFragment"
-        android:name="com.itanes.appturismo.res.fragments.SplashFragment">
+        android:name="com.itanes.appturismo.res.fragments.SplashFragment"
+        android:label="App Turismo">
         <action
             android:id="@+id/action_splash_to_tourList"
             app:destination="@id/tourListFragment"
@@ -16,7 +17,8 @@
 
     <fragment
         android:id="@+id/tourListFragment"
-        android:name="com.itanes.appturismo.res.fragments.TourListFragment">
+        android:name="com.itanes.appturismo.res.fragments.TourListFragment"
+        android:label="Tours">
         <action
             android:id="@+id/action_tourList_to_tourDetail"
             app:destination="@id/tourDetailFragment" />
@@ -27,7 +29,8 @@
 
     <fragment
         android:id="@+id/tourDetailFragment"
-        android:name="com.itanes.appturismo.res.fragments.TourDetailFragment">
+        android:name="com.itanes.appturismo.res.fragments.TourDetailFragment"
+        android:label="Detalle del Tour">
         <argument
             android:name="tourId"
             app:argType="integer" />
@@ -38,7 +41,8 @@
 
     <fragment
         android:id="@+id/touristPointDetailFragment"
-        android:name="com.itanes.appturismo.res.fragments.TouristPointDetailFragment">
+        android:name="com.itanes.appturismo.res.fragments.TouristPointDetailFragment"
+        android:label="Detalle del Punto">
         <argument
             android:name="touristPointId"
             app:argType="integer" />
@@ -46,10 +50,20 @@
 
     <fragment
         android:id="@+id/favoritesFragment"
-        android:name="com.itanes.appturismo.res.fragments.FavoritesFragment">
+        android:name="com.itanes.appturismo.res.fragments.FavoritesFragment"
+        android:label="Favoritos">
         <action
             android:id="@+id/action_favorites_to_pointDetail"
             app:destination="@id/touristPointDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/calendarFragment"
+        android:name="com.itanes.appturismo.res.fragments.CalendarFragment"
+        android:label="Calendario de Tours">
+        <action
+            android:id="@+id/action_calendar_to_tourDetail"
+            app:destination="@id/tourDetailFragment" />
     </fragment>
 
 </navigation>

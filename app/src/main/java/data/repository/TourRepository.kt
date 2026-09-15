@@ -13,10 +13,14 @@ import com.itanes.appturismo.data.local.dao.TourDao
 import data.local.entity.TourWithPoints
 import com.itanes.appturismo.data.local.entity.TouristPoint
 import com.itanes.appturismo.data.local.dao.TouristPointDao
+import data.remote.RetrofitInstance
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import utils.TourApiService
 
 class TourRepository {
@@ -38,38 +42,65 @@ class TourRepository {
     }
 
     fun getAllToursFlow(): Flow<List<Tour>> = flow {
-        // Emitir datos locales primero
+        CoroutineScope(Dispatchers.IO).launch {
+            syncFromApi()
+        }
         emitAll(tourDao.getAll())
-
-        // Sincronizar en segundo plano
+    }
+    private suspend fun syncFromApi() {
         try {
+            //Log.d("TourRepository", "Iniciando sincronización con API")
+
             val response = apiService.getAllTours()
+            //Log.d("TourRepository", "Response code: ${response.code()}")
+
             if (response.isSuccessful) {
                 response.body()?.let { toursResponse ->
+                    //Log.d("TourRepository", "Tours recibidos: ${toursResponse.tours.size}")
+
                     val tours = toursResponse.tours.map { it.toEntity() }
                     val points = toursResponse.tours.flatMap { tour ->
                         tour.points.map { it.toEntity(tour.id) }
                     }
 
+                    //Log.d("TourRepository", "Insertando ${tours.size} tours y ${points.size} puntos")
                     tourDao.insertAll(tours)
+                    //Log.d("TourRepository", "Insertados. Verificando...")
+                    val count = tourDao.count()
+                    //Log.d("TourRepository", "Total en BD: $count")
                     touristPointDao.insertAll(points)
-
-                    // Emitir datos actualizados
-                    emitAll(tourDao.getAll())
+                    //Log.d("TourRepository", "Sincronización completada")
                 }
+            } else {
+                Log.e("TourRepository", "Error: ${response.errorBody()?.string()}")
             }
         } catch (e: Exception) {
-            // Silencioso - mantener datos locales
+            Log.e("TourRepository", "Excepción: ${e.message}", e)
         }
     }
 
+   /* suspend fun getToursByMonth(month: String): List<Tour> {
+        return try {
+            val response = apiService.getToursByMonth(month)
+            if (response.isSuccessful) {
+                response.body()?.tours?.map { it.toEntity() } ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }*/
+
+    fun getToursByMonthFlow(month: String): Flow<List<Tour>> =
+        tourDao.getToursByMonth(month)
     fun getTourWithPointsFlow(tourId: Int): Flow<TourWithPoints> = flow {
         val tour = tourDao.getTourByIdSimple(tourId)
-        Log.d("TourRepository", "Tour encontrado: $tour")
+        //Log.d("TourRepository", "Tour encontrado: $tour")
 
         if (tour != null) {
             val points = tourDao.getPointsByTourId(tourId).first()
-            Log.d("TourRepository", "Puntos encontrados: ${points.size}")
+            //Log.d("TourRepository", "Puntos encontrados: ${points.size}")
 
             emit(TourWithPoints(tour, points))
         } else {
@@ -91,11 +122,15 @@ class TourRepository {
         touristPointDao.getPointById(pointId)
     fun getFavoritePointsFlow(): Flow<List<TouristPoint>> =
         touristPointDao.getFavoritePoints()//  Extensiones de mapeo abajo, deberian ir en utils??
+
     fun TourRemote.toEntity(): Tour = Tour(
         tourId = id,
         name = name,
-        description = description,
-        imageUrl = image,
+        description = description ?:"isNull/notProvided",
+        imageUrl = image ?:"isNull/notProvided",
+        startDate = startDate ?:"isNull/notProvided",
+        endDate = endDate ?:"isNull/notProvided",
+        schedule = schedule ?:"isNull/notProvided",
         updatedAt = System.currentTimeMillis()
     )
 

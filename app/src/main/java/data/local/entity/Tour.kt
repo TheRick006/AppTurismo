@@ -9,5 +9,8 @@ data class Tour(
     val name: String,
     val description: String,
     val imageUrl: String,
+    val startDate: String,
+    val endDate: String,
+    val schedule: String,
     val updatedAt: Long
 )

@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import utils.TourApiService
 
 object RetrofitInstance {
-    private const val BASE_URL = "http://example.com/"
+    private const val BASE_URL = "https://apitourism.vercel.app/api/"
 
     val api: TourApiService by lazy {
         Retrofit.Builder()
