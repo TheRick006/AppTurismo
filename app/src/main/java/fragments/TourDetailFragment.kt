@@ -1,12 +1,15 @@
 package com.itanes.appturismo.res.fragments
 
+import android.content.Intent
 import android.icu.text.SimpleDateFormat
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -24,43 +27,60 @@ import com.itanes.appturismo.MainActivity
 import com.itanes.appturismo.R
 import com.itanes.appturismo.Resource
 import com.itanes.appturismo.TourDetailViewModel
+import com.itanes.appturismo.data.local.entity.TouristPoint
 import utils.TourDetailViewModelFactory
 import data.local.entity.Tour
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import utils.adapter.TouristPointAdapter
 import java.util.Locale
 
 class TourDetailFragment : Fragment() {
 
     private lateinit var viewModel: TourDetailViewModel
+
     private lateinit var scrollContent: NestedScrollView
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
     private lateinit var tourImage: ImageView
     private lateinit var tourName: TextView
+    private lateinit var tourDate: TextView
     private lateinit var tourDescription: TextView
     private lateinit var pointsGrid: RecyclerView
-    private lateinit var adapter: TouristPointAdapter
-    private lateinit var tourDate: TextView
     private lateinit var favoriteButton: MaterialButton
+    private lateinit var viewRouteButton: MaterialButton
+    private lateinit var routePanel: LinearLayout
+    private lateinit var routeMap: MapView
+    private lateinit var openRouteInGoogleMapsButton: MaterialButton
+
+    private lateinit var adapter: TouristPointAdapter
+    private var currentTour: Tour? = null
+    private var currentPoints: List<TouristPoint> = emptyList()
+    private var routeVisible = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        // Inicializar configuración de osmdroid antes de inflar
+        Configuration.getInstance().load(
+            requireContext(),
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+        )
+        Configuration.getInstance().userAgentValue = requireContext().packageName
         return inflater.inflate(R.layout.fragment_tour_detail, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initializeViews(view) //Comentar?
+        initializeViews(view)
 
-        //val tourId = arguments?.getInt("tourId") ?: return
-        val tourId = arguments?.getInt("tourId") ?: -1
-        if(tourId == -1){
-            Log.d("Log_TourDetailFragment","TourId Invalido")
-            return
-        }
+        val tourId = arguments?.getInt("tourId") ?: return
         val repository = (requireActivity().application as AppTurismoApp).repository
         viewModel = ViewModelProvider(
             this,
@@ -68,8 +88,9 @@ class TourDetailFragment : Fragment() {
         )[TourDetailViewModel::class.java]
 
         setupRecyclerView()
-        setupObservers()
+        setupMap()
         setupClickListeners()
+        setupObservers()
     }
 
     private fun initializeViews(view: View) {
@@ -78,10 +99,14 @@ class TourDetailFragment : Fragment() {
         errorText = view.findViewById(R.id.errorText)
         tourImage = view.findViewById(R.id.tourImage)
         tourName = view.findViewById(R.id.tourName)
+        tourDate = view.findViewById(R.id.tourDate)
         tourDescription = view.findViewById(R.id.tourDescription)
         pointsGrid = view.findViewById(R.id.pointsGrid)
-        tourDate = view.findViewById(R.id.tourDate)
         favoriteButton = view.findViewById(R.id.favoriteButton)
+        viewRouteButton = view.findViewById(R.id.viewRouteButton)
+        routePanel = view.findViewById(R.id.routePanel)
+        routeMap = view.findViewById(R.id.routeMap)
+        openRouteInGoogleMapsButton = view.findViewById(R.id.openRouteInGoogleMapsButton)
     }
 
     private fun setupRecyclerView() {
@@ -90,40 +115,61 @@ class TourDetailFragment : Fragment() {
                 .actionTourDetailToPointDetail(point.touristPointId)
             findNavController().navigate(action)
         }
-
-        pointsGrid.adapter = adapter
         val columns = calculateColumns()
         pointsGrid.layoutManager = GridLayoutManager(context, columns)
+        pointsGrid.adapter = adapter
+    }
+
+    private fun setupMap() {
+        routeMap.setTileSource(TileSourceFactory.MAPNIK)
+        routeMap.setMultiTouchControls(true)
+        routeMap.controller.setZoom(13.0)
+    }
+
+    private fun setupClickListeners() {
+        favoriteButton.setOnClickListener {
+            viewModel.toggleFavorite()
+            val isFav = viewModel.isFavorite.value ?: false
+            Toast.makeText(
+                context,
+                if (!isFav) "Añadido a favoritos" else "Eliminado de favoritos",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        viewRouteButton.setOnClickListener {
+            toggleRoutePanel()
+        }
+
+        openRouteInGoogleMapsButton.setOnClickListener {
+            openRouteInGoogleMaps()
+        }
     }
 
     private fun setupObservers() {
         viewModel.tourWithPoints.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Loading -> {
-                    //Log.d("TourDetailFragment", "Estado: Loading")
-                    progressBar.visibility = View.VISIBLE
-                    scrollContent.visibility = View.GONE
-                    errorText.visibility = View.GONE
+                    progressBar.isVisible = true
+                    scrollContent.isVisible = false
+                    errorText.isVisible = false
                 }
                 is Resource.Success -> {
-                    /*Log.d("TourDetailFragment", "Estado: Success")
-                    Log.d("TourDetailFragment", "Tour: ${resource.data.tour.name}")
-                    Log.d("TourDetailFragment", "Puntos: ${resource.data.points.size}")
-*/
-                    progressBar.visibility = View.GONE
-                    scrollContent.visibility = View.VISIBLE
-                    errorText.visibility = View.GONE
-
+                    progressBar.isVisible = false
+                    scrollContent.isVisible = true
+                    errorText.isVisible = false
+                    currentTour = resource.data.tour
+                    currentPoints = resource.data.points
                     bindTour(resource.data.tour)
-                    adapter.submitList(resource.data.points)/*{
-                        Log.d("TDT TourDetailFragment_SubmList", "submitList completado. itemCount: ${adapter.itemCount}")
-                    }*/
+                    adapter.submitList(resource.data.points)
+
+                    // Si el panel estaba abierto, redibujar
+                    if (routeVisible) drawRoute()
                 }
                 is Resource.Error -> {
-                    //Log.e("TourDetailFragment", "Estado: Error - ${resource.message}")
-                    progressBar.visibility = View.GONE
-                    scrollContent.visibility = View.GONE
-                    errorText.visibility = View.VISIBLE
+                    progressBar.isVisible = false
+                    scrollContent.isVisible = false
+                    errorText.isVisible = true
                     errorText.text = resource.message
                 }
             }
@@ -132,7 +178,6 @@ class TourDetailFragment : Fragment() {
         viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
             updateFavoriteButton(isFav)
         }
-
     }
 
     private fun updateFavoriteButton(isFavorite: Boolean) {
@@ -142,25 +187,124 @@ class TourDetailFragment : Fragment() {
         favoriteButton.text = if (isFavorite) "Quitar de favoritos" else "Añadir a favoritos"
     }
 
-    private fun setupClickListeners() {
-        // Botón de favoritos
-        favoriteButton.setOnClickListener {
-            val wasFavorite = viewModel.isFavorite.value ?: false
-            viewModel.toggleFavorite()
-
-            val message = if (!wasFavorite) "Añadido a favoritos" else "Eliminado de favoritos"
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-        }
-    }
     private fun bindTour(tour: Tour) {
         tourName.text = tour.name
         tourDescription.text = tour.description
         tourDate.text = "${formatDate(tour.startDate)} • ${tour.schedule}"
-        // Actualizar título de la toolbar
-        (requireActivity() as MainActivity).supportActionBar?.title = tour.name
+
         Glide.with(this)
             .load(tour.imageUrl)
             .into(tourImage)
+    }
+
+    private fun toggleRoutePanel() {
+        if (!routeVisible) {
+            if (currentPoints.isEmpty()) {
+                Toast.makeText(context, "No hay puntos para mostrar", Toast.LENGTH_SHORT).show()
+                return
+            }
+            routePanel.isVisible = true
+            routeVisible = true
+            viewRouteButton.text = "Ocultar recorrido"
+            drawRoute()
+        } else {
+            routePanel.isVisible = false
+            routeVisible = false
+            viewRouteButton.text = "Ver recorrido"
+        }
+    }
+
+    private fun drawRoute() {
+        if (currentPoints.isEmpty()) return
+        routeMap.overlays.clear()
+
+        val geoPoints = currentPoints.map {
+            GeoPoint(it.latitude, it.longitude)
+        }
+
+        // Marcadores numerados
+        geoPoints.forEachIndexed { index, geoPoint ->
+            val marker = Marker(routeMap).apply {
+                position = geoPoint
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                title = currentPoints[index].name
+                snippet = currentPoints[index].description
+            }
+            routeMap.overlays.add(marker)
+        }
+
+        // Polyline conectando todos los puntos
+        if (geoPoints.size >= 2) {
+            val line = Polyline().apply {
+                setPoints(geoPoints)
+                outlinePaint.color = 0xFF6200EE.toInt() // purple_500
+                outlinePaint.strokeWidth = 8f
+            }
+            routeMap.overlays.add(line)
+        }
+
+        // Centrar el mapa para mostrar todos los puntos
+        if (geoPoints.isNotEmpty()) {
+            routeMap.post {
+                routeMap.zoomToBoundingBox(
+                    org.osmdroid.util.BoundingBox.fromGeoPoints(geoPoints),
+                    true,
+                    100
+                )
+            }
+        }
+
+        routeMap.invalidate()
+    }
+
+    private fun openRouteInGoogleMaps() {
+        if (currentPoints.isEmpty()) {
+            Toast.makeText(context, "No hay puntos para mostrar", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Google Maps Directions API URL
+        // https://www.google.com/maps/dir/?api=1&origin=LAT,LNG&destination=LAT,LNG&waypoints=LAT1,LNG1|LAT2,LNG2
+        val origin = currentPoints.first()
+        val destination = currentPoints.last()
+        val waypoints = if (currentPoints.size > 2) {
+            currentPoints.subList(1, currentPoints.size - 1)
+                .joinToString("|") { "${it.latitude},${it.longitude}" }
+        } else ""
+
+        val url = buildString {
+            append("https://www.google.com/maps/dir/?api=1")
+            append("&origin=${origin.latitude},${origin.longitude}")
+            append("&destination=${destination.latitude},${destination.longitude}")
+            if (waypoints.isNotEmpty()) append("&waypoints=$waypoints")
+            append("&travelmode=driving")
+        }
+
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            setPackage("com.google.android.apps.maps")
+        }
+
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback: navegador
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            } catch (e2: Exception) {
+                Toast.makeText(context, "No hay app de mapas disponible", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun formatDate(dateString: String): String {
+        return try {
+            val cleanDate = dateString.substringBefore("+").substringBefore(".").trim()
+            val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+            val outputFormat = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale("es", "ES"))
+            inputFormat.parse(cleanDate)?.let { outputFormat.format(it) } ?: dateString
+        } catch (e: Exception) {
+            dateString
+        }
     }
 
     private fun calculateColumns(): Int {
@@ -169,14 +313,19 @@ class TourDetailFragment : Fragment() {
         val itemWidthDp = 160f
         return (screenWidthDp / itemWidthDp).toInt().coerceAtLeast(2)
     }
-    private fun formatDate(dateString: String): String {
-        return try {
-            val cleanDate = dateString.substringBefore("+").substringBefore(".").trim()
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
-            inputFormat.parse(cleanDate)?.let { outputFormat.format(it) } ?: dateString
-        } catch (e: Exception) {
-            dateString
-        }
+
+    override fun onResume() {
+        super.onResume()
+        if (::routeMap.isInitialized) routeMap.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::routeMap.isInitialized) routeMap.onPause()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (::routeMap.isInitialized) routeMap.onDetach()
     }
 }
