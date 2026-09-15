@@ -37,6 +37,11 @@ interface TourDao {
     @Query("SELECT * FROM tours WHERE tourId = :tourId")
     fun getTourById(tourId: Int): Flow<TourWithPoints>
 
+    @Query("""
+    SELECT t.* FROM tours t
+    INNER JOIN favorites f ON t.tourId = f.targetId AND f.type = 'tour'
+""")
+    fun getFavoriteTours(): Flow<List<Tour>>
 
 }
 

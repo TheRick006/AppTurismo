@@ -28,12 +28,12 @@ class TouristPointDetailViewModel(
         }
     }
 
-    val isFavorite: LiveData<Boolean> = repository.isFavoriteLiveData(pointId)
+    val isFavorite: LiveData<Boolean> = repository.isPointFavoriteLiveData(pointId)
 
     fun toggleFavorite() {
         viewModelScope.launch {
             val current = isFavorite.value ?: false
-            repository.toggleFavorite(pointId, !current)
+            repository.togglePointFavorite(pointId, !current)
         }
     }
 }

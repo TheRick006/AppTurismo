@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
@@ -17,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.android.material.button.MaterialButton
 import com.itanes.appturismo.AppTurismoApp
 import com.itanes.appturismo.MainActivity
 import com.itanes.appturismo.R
@@ -39,6 +41,7 @@ class TourDetailFragment : Fragment() {
     private lateinit var pointsGrid: RecyclerView
     private lateinit var adapter: TouristPointAdapter
     private lateinit var tourDate: TextView
+    private lateinit var favoriteButton: MaterialButton
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -66,6 +69,7 @@ class TourDetailFragment : Fragment() {
 
         setupRecyclerView()
         setupObservers()
+        setupClickListeners()
     }
 
     private fun initializeViews(view: View) {
@@ -77,6 +81,7 @@ class TourDetailFragment : Fragment() {
         tourDescription = view.findViewById(R.id.tourDescription)
         pointsGrid = view.findViewById(R.id.pointsGrid)
         tourDate = view.findViewById(R.id.tourDate)
+        favoriteButton = view.findViewById(R.id.favoriteButton)
     }
 
     private fun setupRecyclerView() {
@@ -123,8 +128,30 @@ class TourDetailFragment : Fragment() {
                 }
             }
         }
+
+        viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
+            updateFavoriteButton(isFav)
+        }
+
     }
 
+    private fun updateFavoriteButton(isFavorite: Boolean) {
+        favoriteButton.setIconResource(
+            if (isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+        )
+        favoriteButton.text = if (isFavorite) "Quitar de favoritos" else "Añadir a favoritos"
+    }
+
+    private fun setupClickListeners() {
+        // Botón de favoritos
+        favoriteButton.setOnClickListener {
+            val wasFavorite = viewModel.isFavorite.value ?: false
+            viewModel.toggleFavorite()
+
+            val message = if (!wasFavorite) "Añadido a favoritos" else "Eliminado de favoritos"
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
     private fun bindTour(tour: Tour) {
         tourName.text = tour.name
         tourDescription.text = tour.description

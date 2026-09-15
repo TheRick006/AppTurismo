@@ -4,9 +4,11 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.liveData
+import androidx.lifecycle.viewModelScope
 import data.repository.TourRepository
 import data.local.entity.TourWithPoints
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
 
 class TourDetailViewModel(
     private val repository: TourRepository,
@@ -27,6 +29,14 @@ class TourDetailViewModel(
         } catch (e: Exception) {
             Log.e("TourDetailViewModel", "Excepción: ${e.message}")
             emit(Resource.Error(e.message ?: "Error desconocido"))
+        }
+    }
+    val isFavorite: LiveData<Boolean> = repository.isTourFavoriteLiveData(tourId)
+
+    fun toggleFavorite() {
+        viewModelScope.launch {
+            val current = isFavorite.value ?: false
+            repository.toggleTourFavorite(tourId, !current)
         }
     }
 }

@@ -55,6 +55,9 @@
         <action
             android:id="@+id/action_favorites_to_pointDetail"
             app:destination="@id/touristPointDetailFragment" />
+        <action
+            android:id="@+id/action_favorites_to_tourDetail"
+            app:destination="@id/tourDetailFragment" />
     </fragment>
 
     <fragment

@@ -79,18 +79,6 @@ class TourRepository {
         }
     }
 
-   /* suspend fun getToursByMonth(month: String): List<Tour> {
-        return try {
-            val response = apiService.getToursByMonth(month)
-            if (response.isSuccessful) {
-                response.body()?.tours?.map { it.toEntity() } ?: emptyList()
-            } else {
-                emptyList()
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }*/
 
     fun getToursByMonthFlow(month: String): Flow<List<Tour>> =
         tourDao.getToursByMonth(month)
@@ -107,21 +95,34 @@ class TourRepository {
             Log.e("TourRepository", "Tour no encontrado")
         }
     }
+    fun getFavoritePointsFlow(): Flow<List<TouristPoint>> =
+        touristPointDao.getFavoritePoints()
+    suspend fun getPointById(pointId: Int): TouristPoint? =
+        touristPointDao.getPointById(pointId)
 
-    suspend fun toggleFavorite(pointId: Int, isFavorite: Boolean) {
+    suspend fun toggleTourFavorite(tourId: Int, isFavorite: Boolean) {
         if (isFavorite) {
-            favoriteDao.insert(Favorite(pointId))
+            favoriteDao.insert(Favorite(tourId, Favorite.TYPE_TOUR))
         } else {
-            favoriteDao.delete(pointId)
+            favoriteDao.delete(tourId, Favorite.TYPE_TOUR)
         }
     }
 
-    fun isFavoriteLiveData(pointId: Int): LiveData<Boolean> =
-        favoriteDao.isFavorite(pointId).asLiveData()
-    suspend fun getPointById(pointId: Int): TouristPoint? =
-        touristPointDao.getPointById(pointId)
-    fun getFavoritePointsFlow(): Flow<List<TouristPoint>> =
-        touristPointDao.getFavoritePoints()//  Extensiones de mapeo abajo, deberian ir en utils??
+    suspend fun togglePointFavorite(pointId: Int, isFavorite: Boolean) {
+        if (isFavorite) {
+            favoriteDao.insert(Favorite(pointId, Favorite.TYPE_POINT))
+        } else {
+            favoriteDao.delete(pointId, Favorite.TYPE_POINT)
+        }
+    }
+
+    fun isTourFavoriteLiveData(tourId: Int): LiveData<Boolean> =
+        favoriteDao.isFavorite(tourId, Favorite.TYPE_TOUR).asLiveData()
+
+    fun isPointFavoriteLiveData(pointId: Int): LiveData<Boolean> =
+        favoriteDao.isFavorite(pointId, Favorite.TYPE_POINT).asLiveData()
+
+    fun getFavoriteToursFlow(): Flow<List<Tour>> = tourDao.getFavoriteTours()
 
     fun TourRemote.toEntity(): Tour = Tour(
         tourId = id,

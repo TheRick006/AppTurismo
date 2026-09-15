@@ -54,6 +54,18 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/favoriteButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:text="Añadir a favoritos"
+                app:icon="@drawable/ic_favorite_border"
+                app:layout_constraintTop_toBottomOf="@id/tourDate"
+                app:layout_constraintStart_toStartOf="parent" />
+
             <!-- Cambiar el tourDescription para que dependa de tourDate -->
             <TextView
                 android:id="@+id/tourDescription"
@@ -63,7 +75,7 @@
                 android:layout_marginEnd="16dp"
                 android:layout_marginTop="8dp"
                 android:textSize="16sp"
-                app:layout_constraintTop_toBottomOf="@id/tourDate"
+                app:layout_constraintTop_toBottomOf="@id/favoriteButton"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 

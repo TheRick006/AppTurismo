@@ -20,8 +20,9 @@ interface TouristPointDao {
     suspend fun getPointById(pointId: Int): TouristPoint?
 
     @Query("""
-        SELECT tp.* FROM tourist_points tp
-        INNER JOIN favorites f ON tp.touristPointId = f.touristPointId
-    """)
+    SELECT tp.* FROM tourist_points tp
+    INNER JOIN favorites f ON tp.touristPointId = f.targetId AND f.type = 'point'
+""")
     fun getFavoritePoints(): Flow<List<TouristPoint>>
+    
 }
