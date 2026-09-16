@@ -54,6 +54,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.tourListFragment,
                 R.id.favoritesFragment,
                 R.id.calendarFragment,
+                R.id.settingsFragment,
+                R.id.notesFragment
             ),
             drawerLayout
         )
@@ -69,6 +71,8 @@ class MainActivity : AppCompatActivity() {
 
         // Manejar clics en el menú
         navigationView.setNavigationItemSelectedListener { menuItem ->
+            Log.d("MainActivity", "Menú seleccionado: ${menuItem.itemId}")
+            Log.d("MainActivity", "menu_notes=${R.id.menu_notes}, menu_settings=${R.id.menu_settings}")
             when (menuItem.itemId) {
                 R.id.menu_tours -> {
                     navController.navigate(R.id.tourListFragment)
@@ -80,18 +84,20 @@ class MainActivity : AppCompatActivity() {
                     drawerLayout.closeDrawers()
                     true
                 }
-                R.id.menu_settings -> {
-                    // Navegar a ajustes (implementar después)
-                    drawerLayout.closeDrawers()
-                    true
-                }
-                R.id.menu_notes -> {
-                    // Navegar a notas (implementar después)
-                    drawerLayout.closeDrawers()
-                    true
-                }
                 R.id.menu_calendar -> {
                     navController.navigate(R.id.calendarFragment)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+
+                R.id.menu_settings -> {
+                    navController.navigate(R.id.settingsFragment)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+
+                R.id.menu_notes -> {
+                    navController.navigate(R.id.notesFragment)
                     drawerLayout.closeDrawers()
                     true
                 }

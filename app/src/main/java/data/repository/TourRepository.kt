@@ -13,6 +13,8 @@ import com.itanes.appturismo.data.local.dao.TourDao
 import data.local.entity.TourWithPoints
 import com.itanes.appturismo.data.local.entity.TouristPoint
 import com.itanes.appturismo.data.local.dao.TouristPointDao
+import data.local.dao.NoteDao
+import data.local.entity.Note
 import data.remote.RetrofitInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,17 +29,20 @@ class TourRepository {
     private val tourDao: TourDao
     private val touristPointDao: TouristPointDao
     private val favoriteDao: FavoriteDao
+    private val noteDao: NoteDao
     private val apiService: TourApiService
 
     constructor(
         tourDao: TourDao,
         touristPointDao: TouristPointDao,
         favoriteDao: FavoriteDao,
+        noteDao: NoteDao,
         apiService: TourApiService
     ) {
         this.tourDao = tourDao
         this.touristPointDao = touristPointDao
         this.favoriteDao = favoriteDao
+        this.noteDao = noteDao
         this.apiService = apiService
     }
 
@@ -144,5 +149,26 @@ class TourRepository {
         longitude = lng,
         imageUrls = Gson().toJson(images)
     )
+    // Notas
+    fun getNotesForDate(dateKey: String): Flow<List<Note>> =
+        noteDao.getNotesForDate(dateKey)
+
+    fun getAllNotes(): Flow<List<Note>> = noteDao.getAllNotes()
+
+    fun getDatesWithNotes(): Flow<List<String>> = noteDao.getDatesWithNotes()
+
+    suspend fun getNoteById(id: Long): Note? = noteDao.getNoteById(id)
+
+    suspend fun saveNote(note: Note): Long {
+        return if (note.noteId == 0L) {
+            noteDao.insert(note.copy(createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()))
+        } else {
+            noteDao.update(note.copy(updatedAt = System.currentTimeMillis()))
+            note.noteId
+        }
+    }
+
+    suspend fun deleteNote(note: Note) = noteDao.delete(note)
 
 }

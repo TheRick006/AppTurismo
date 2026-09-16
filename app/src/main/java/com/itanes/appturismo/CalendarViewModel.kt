@@ -6,11 +6,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import data.repository.TourRepository
 import data.local.entity.CalendarDay
+import data.local.entity.Note
 import data.local.entity.Tour
 import kotlinx.coroutines.launch
+import utils.SettingsManager
 import java.util.Calendar
 
-class CalendarViewModel(private val repository: TourRepository) : ViewModel() {
+class CalendarViewModel(private val repository: TourRepository,
+                        private val settingsManager: SettingsManager
+) : ViewModel() {
 
     private val today = Calendar.getInstance()
     private var currentYear = today.get(Calendar.YEAR)
@@ -30,8 +34,20 @@ class CalendarViewModel(private val repository: TourRepository) : ViewModel() {
     private val _selectedDayTours = MutableLiveData<List<Tour>>()
     val selectedDayTours: LiveData<List<Tour>> = _selectedDayTours
 
+    private val _notesVisible = MutableLiveData<Boolean>()
+    val notesVisible: LiveData<Boolean> = _notesVisible
+
+    private val _notesForSelectedDay = MutableLiveData<List<Note>>()
+    val notesForSelectedDay: LiveData<List<Note>> = _notesForSelectedDay
+
+    private val _datesWithNotes = MutableLiveData<Set<String>>()
+    val datesWithNotes: LiveData<Set<String>> = _datesWithNotes
+
+
     init {
+        _notesVisible.value = settingsManager.showNotesByDefault
         loadMonth()
+        observeNotesDates()
     }
 
     fun previousMonth() {
@@ -58,6 +74,17 @@ class CalendarViewModel(private val repository: TourRepository) : ViewModel() {
         val dayTours = currentMonthTours.filter { extractDay(it.startDate) == day }
         _selectedDayTours.value = dayTours
         _selectedDayLabel.value = "Tours del $day de ${monthName(currentMonth)}"
+
+        val dateKey = "%04d-%02d-%02d".format(currentYear, currentMonth + 1, day)
+        viewModelScope.launch {
+            repository.getNotesForDate(dateKey).collect { notes ->
+                _notesForSelectedDay.value = notes
+            }
+        }
+    }
+    private fun currentSelectedDateKey(): String? {
+        val day = selectedDay ?: return null
+        return "%04d-%02d-%02d".format(currentYear, currentMonth + 1, day)
     }
 
     private fun loadMonth() {
@@ -126,4 +153,41 @@ class CalendarViewModel(private val repository: TourRepository) : ViewModel() {
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     )[month]
+
+    // Integracion con Notas
+    private fun observeNotesDates() {
+        viewModelScope.launch {
+            repository.getDatesWithNotes().collect { dates ->
+                _datesWithNotes.value = dates.toSet()
+                updateCalendarDays()
+            }
+        }
+    }
+    fun toggleNotesVisibility() {
+        val newValue = !(_notesVisible.value ?: true)
+        _notesVisible.value = newValue
+    }
+
+    fun saveNoteForSelectedDay(title: String, content: String) {
+        val dateKey = currentSelectedDateKey() ?: return
+        viewModelScope.launch {
+            val note = Note(
+                title = title,
+                content = content,
+                dateKey = dateKey,
+                tourId = null,
+                createdAt = 0,
+                updatedAt = 0
+            )
+            repository.saveNote(note)
+        }
+    }
+
+    fun deleteNote(note: Note) {
+        viewModelScope.launch { repository.deleteNote(note) }
+    }
+
+    fun updateNote(note: Note) {
+        viewModelScope.launch { repository.saveNote(note) }
+    }
 }

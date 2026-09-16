@@ -11,15 +11,18 @@ import data.local.entity.Tour
 import data.local.dao.FavoriteDao
 import com.itanes.appturismo.data.local.dao.TouristPointDao
 import com.itanes.appturismo.data.local.entity.TouristPoint
+import data.local.dao.NoteDao
+import data.local.entity.Note
 import utils.Converters
 
 @Database(
     entities = [
         Tour::class,
         TouristPoint::class,
-        Favorite::class
+        Favorite::class,
+        Note::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -28,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun tourDao(): TourDao
     abstract fun touristPointDao(): TouristPointDao
     abstract fun favoriteDao(): FavoriteDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         @Volatile

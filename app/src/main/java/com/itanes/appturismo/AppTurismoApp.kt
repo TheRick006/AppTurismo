@@ -9,31 +9,36 @@ import data.local.AppDatabase
 import data.remote.RetrofitInstance
 import data.repository.TourRepository
 import utils.CustomWorkerFactory
+import utils.SettingsManager
 
 
 class AppTurismoApp : Application()/*, Configuration.Provider*/ {
 
     lateinit var repository: TourRepository
-        private set
-
+    private set
+    lateinit var settingsManager : SettingsManager
+    private set
     override fun onCreate() {
         super.onCreate()
-        try{
+        settingsManager = SettingsManager(this)
+        settingsManager.applyTheme()
+        //try{
             val database = AppDatabase.getInstance(this)
             repository = TourRepository(
                 database.tourDao(),
                 database.touristPointDao(),
                 database.favoriteDao(),
+                database.noteDao(),
                 RetrofitInstance.api
             )
-        }catch(e: Exception){
-            Log.e("LogError_AppTurismoApp","Error inicializando: ${e.message}")
-            e.printStackTrace()
-        }
+        //}catch(e: Exception){
+          //  Log.e("LogError_AppTurismoApp","Error inicializando: ${e.message}")
+        //    e.printStackTrace()
+       // }
 
 
         // Programar sincronización   Probar comentar luego
-        SyncDataWorker.schedule(this)
+        //SyncDataWorker.schedule(this)
     }
 
     /*override val workManagerConfiguration: Configuration

@@ -95,6 +95,51 @@
             android:layout_marginTop="8dp"
             android:nestedScrollingEnabled="false" />
 
+
+        <!-- Cabecera de notas con botón toggle -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Notas del día"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/purple_500" />
+
+            <ImageButton
+                android:id="@+id/toggleNotesButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_notes"
+                android:contentDescription="Mostrar/ocultar notas" />
+        </LinearLayout>
+
+        <!-- Lista de notas del día (oculta por defecto según preferencia) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/notesList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" />
+
+        <!-- Botón agregar nota -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addNoteButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Agregar nota"
+            app:icon="@android:drawable/ic_input_add" />
+
+
         <!-- Estado vacío -->
         <TextView
             android:id="@+id/emptyText"

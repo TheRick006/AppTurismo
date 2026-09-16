@@ -68,5 +68,13 @@
             android:id="@+id/action_calendar_to_tourDetail"
             app:destination="@id/tourDetailFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.itanes.appturismo.res.fragments.SettingsFragment"
+        android:label="Ajustes" />
 
+    <fragment
+        android:id="@+id/notesFragment"
+        android:name="com.itanes.appturismo.res.fragments.NotesFragment"
+        android:label="Notas" />
 </navigation>
